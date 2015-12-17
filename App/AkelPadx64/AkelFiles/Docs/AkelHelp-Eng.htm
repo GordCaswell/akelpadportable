@@ -102,19 +102,28 @@
         <td>- ignore next command line parameter.</td>
       </tr>
       <tr>
-        <td><li><b>/reassoc</b></td>
+        <td><li><b>/NewInstance</b></td>
+        <td>- force create new program instance.</td>
+      </tr>
+      <tr>
+        <td><li><b>/MainClass("MyAkelPad4")</b></td>
+        <td>- set class name for a new program instance. Name could contain variable %d, which is replaced with process id.</td>
+      </tr>
+      <tr>
+      <tr>
+        <td><li><b>/Reassoc</b></td>
         <td>- reinstall assigned earlier associations of file types.</td>
       </tr>
       <tr>
-        <td><li><b>/deassoc</b></td>
+        <td><li><b>/Deassoc</b></td>
         <td>- uninstall assigned earlier associations of file types.</td>
       </tr>
       <tr>
-        <td><li><b>/quit</b></td>
+        <td><li><b>/Quit</b></td>
         <td>- stop parsing command line parameters and close program.</td>
       </tr>
       <tr>
-        <td><li><b>/end</b></td>
+        <td><li><b>/End</b></td>
         <td>- stop parsing command line parameters.</td>
       </tr>
     </table>
@@ -1869,7 +1878,7 @@
       <th>Matches</th>
     </tr>
     <tr>
-      <td>^\s*$</td>
+      <td>^\s*?$</td>
       <td>Match a blank line.</td>
     </tr>
     <tr>
@@ -1877,7 +1886,7 @@
       <td>Validate an ID number consisting of 2 digits, a hyphen, and an additional 5 digits.</td>
     </tr>
     <tr>
-      <td>&lt;(\w+)[^&gt;]*&gt;.*&lt;/\1&gt;</td>
+      <td>&lt;(\w+)[^&gt;]*&gt;.*?&lt;/\1&gt;</td>
       <td>Match an HTML tag.</td>
     </tr>
   </table>
@@ -1967,7 +1976,7 @@
       <td>(?(<i>condition</i>)<i>pattern-true</i>|<i>pattern-false</i>)
       <br><br>(?(<i>condition</i>)<i>pattern-true</i>)
       </td>
-      <td>If the condition is satisfied, the pattern-true is used; otherwise the pattern-false (if present) is used. Condition can be pattern or a number of backreference, which will be checked for match success. For example, '(a)?b(?(1)c|d)' matches the "abc" in "abc" and "bd" in "zbd". Because, if "а" found, then trying to find "с" after "b", if "а" not found, then trying to find "d" after "b".</td>
+      <td>If the condition is satisfied, the pattern-true is used; otherwise the pattern-false (if present) is used. Condition can be pattern with positive/negative lookahead/lookbehind search or a number of backreference, which will be checked for match success. For example, '(a)?b(?(1)c|d)' matches the "abc" in "abc" and "bd" in "zbd". Because, if "a" found, then trying to find "c" after "b", if "a" not found, then trying to find "d" after "b".</td>
     </tr>
     <tr>
       <td>(?<i>options</i>)</td>

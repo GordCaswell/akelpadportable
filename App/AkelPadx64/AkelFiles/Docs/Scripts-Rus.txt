@@ -1,5 +1,5 @@
 *****************************************************************
-***                 Scripts AkelPad plugin v17.4              ***
+***                 Scripts AkelPad plugin v18.2              ***
 *****************************************************************
 
 2015 Шенгальц Александр aka Instructor (Shengalts@mail.ru)
@@ -120,6 +120,17 @@ Call("Scripts::Main", 5, "SCRIPT", OPERATION, *RESULT)
 Call("Scripts::Main", 6, SCRIPTHANDLE, OPERATION, *RESULT)
   То же, что и 5, но используется дескриптор скрипта вместо файла скрипта.
 
+Call("Scripts::Main", 7, "METHOD", *RESULT)
+  Параметры:
+    7
+      Вызвать метод Scripts плагина напрямую. Предназначено для ContextMenu, Hotkeys, Toolbar плагинов.
+    "METHOD"
+      Метод Scripts плагина с аргументами.
+    *RESULT
+      Результат вызова.
+  Пример:
+    "Найти следующий параграф" Call("Scripts::Main", 7, `AkelPad.TextFind(0, "(?<=\n\n)(?!\n)", 0x80001 /*FRF_DOWN|FRF_REGEXP*/)`)
+
 
 *** Служебная информация в скрипте ***
 
@@ -216,6 +227,7 @@ AkelPad.MemFree                              +ActiveX
 AkelPad.DebugJIT                             +ActiveX
 AkelPad.Debug                                +ActiveX
 AkelPad.VarType                              +ActiveX
+AkelPad.VarDispatch                          +ActiveX
 AkelPad.GetArgLine
 AkelPad.GetArgValue
 AkelPad.ScriptSettings
@@ -239,6 +251,10 @@ AkelPad.ThreadUnhook                         +ActiveX
 AkelPad.ScriptNoMutex
 AkelPad.ScriptExitCode
 AkelPad.ScriptHandle                         +ActiveX
+AkelPad.ConnectObject                        +ActiveX
+AkelPad.DisconnectObject                     +ActiveX
+AkelPad.ActiveXThis                          +ActiveX
+WScript.ScriptBaseName
 _TCHAR                                       +ActiveX используется как AkelPad.Constants._TCHAR
 vbTCHAR                                      +ActiveX используется как AkelPad.Constants.vbTCHAR
 _TSTR                                        +ActiveX используется как AkelPad.Constants._TSTR
@@ -1178,11 +1194,17 @@ _______________
 
 Добавить код из файла.
 
-  Include(pFileName);
+  Include(pFileName[, nFlags][, nCodePage][, bBOM]);
 
 Аргументы
   pFileName
     Имя файла, который находится в директории "[AkelPad]\AkelFiles\Plugs\Scripts\Include".
+  nFlags
+    См. описание nFlags метода AkelPad.ReadFile.
+  nCodePage
+    См. описание nCodePage метода AkelPad.ReadFile.
+  bBOM
+    См. описание bBOM метода AkelPad.ReadFile.
 
 Замечания
   Метод Include аналогичен коду eval(AkelPad.ReadFile("...")), но позволяет выявлять место ошибки в добавляемом файле, если она присутствует.
@@ -1192,11 +1214,19 @@ _______________
   false  не успешно.
 
 Пример:
-  var pParent;
+   var lpItems;
+   var nItem;
 
-  AkelPad.Include("CommonFunctions.js");
-  pParent=GetParent("C:\\Program Files\\1.txt");
-  WScript.Echo(pParent);
+   if (!AkelPad.Include("ShowMenu.js")) WScript.Quit();
+
+   lpItems=[["ItemA", MF_NORMAL, 101],
+            ["ItemB", MF_SUBMENU],
+              ["ItemB-1", MF_NORMAL, 102],
+              ["ItemB-2", MF_NORMAL, 103],
+              ["ItemB-3", MF_NORMAL|MF_LAST, 104],
+            ["ItemC", MF_NORMAL, 105]];
+   nItem=ShowMenu(lpItems, POS_CARET, POS_CARET);
+   WScript.Echo("" + nItem);
 
 
 AkelPad.IsInclude
@@ -1234,6 +1264,8 @@ ________________
     0x020  //OD_ADT_ONLYBOM         Определить кодировку, только если присутствует сигнатура BOM, иначе будет использована кодировка по умолчанию.
     0x100  //OD_REOPEN              Не создавать новое окно, использовать имеющееся.
     0x200  //OD_NOSCROLL            Не восстанавливать прокрутку текста.
+    0x400  //OD_MULTIFILE           Ещё документы в очереди. Использовать MB_YESNOCANCEL вместо MB_OKCANCEL.
+    0x800  //OD_NOUPDATE            Не обновлять информацию о файле в программе.
            //По умолчанию 0xD       (OD_ADT_BINARYERROR|OD_ADT_DETECTCODEPAGE|OD_ADT_DETECTBOM).
   nCodePage
     Кодировка файла, игнорируется если (nFlags & OD_ADT_DETECTCODEPAGE)
@@ -1332,7 +1364,7 @@ ________________
 
 Сохранить документ.
 
-  SaveFile(hHandle, pFile[, nCodePage][, bBOM][, nFlags]);
+  SaveFile(hHandle, pFile[, nCodePage][, bBOM][, nFlags][, hDoc]);
 
 Аргументы
   hHandle
@@ -1347,6 +1379,8 @@ ________________
     0x1  //SD_UPDATE         Обновить информацию о файле в программе.
     0x2  //SD_SELECTION      Сохранить только выделение.
          //По умолчанию 0x1  (SD_UPDATE).
+  hDoc
+    Дескриптор документа. Если ноль (по умолчанию), то определяется автоматически.
 
 Возвращаемое значение
    0  //ESD_SUCCESS        Успешно.
@@ -1399,11 +1433,11 @@ ________________________________________
 
 Вызвать системную функцию.
 
-  Call(pDllFunction[, ...]);
+  Call(vDllFunction[, ...]);
 
 Аргументы
-  pDllFunction
-    Имя функции в формате "Библиотека::Функция".
+  vDllFunction
+    Имя функции в формате строки "Библиотека::Функция" или адрес функции в формате числа.
   ...
     Параметры функции, должны быть числом, указателем либо строкой.
     Строковой параметр: в Windows 95/98/Me - однобайтовая строка,
@@ -1828,6 +1862,28 @@ __________________
 
   if (pArgLine=AkelPad.GetArgLine(0))
     WScript.Echo(pArgLine);
+
+
+AkelPad.VarDispatch (+ActiveX)
+______________________________
+
+Получить IDispatch объект по указателю.
+
+  VarDispatch(lpPointer);
+
+Аргументы
+  lpPointer
+    Указатель на IDispatch объект.
+
+Возвращаемое значение
+  Объект. IDispatch объект.
+
+Пример:
+  var oIE=new ActiveXObject("InternetExplorer.Application");
+  //IDispatch -> указатель
+  var nIE=_PtrAdd(oIE, 0);
+  //Указатель -> IDispatch
+  var oReturnIE=AkelPad.VarDispatch(nIE);
 
 
 AkelPad.GetArgValue
@@ -2827,6 +2883,99 @@ _______________________________
   }
 
 
+AkelPad.ConnectObject (+ActiveX)
+________________________________
+
+Подсоединиться к событиям объекта.
+
+  ConnectObject(oEventSource, pPrefix[, vIID]);
+
+Аргументы
+  oEventSource
+    Объект, к которому необходимо подсоединиться.
+  pPrefix
+    Префикс для функций, куда будут приходить события.
+  vIID
+    IID интерфейса событий.
+    - vIID может быть строкой в формате "{00000000-0000-0000-0000-000000000000}".
+    - vIID может быть указателем. Пример:
+        var lpDIID_DWebBrowserEvents2=AkelPad.MemAlloc(16 /*sizeof(IID)*/);
+        oSys.Call("ole32::IIDFromString", "{34A715A0-6587-11D0-924A-0020AFC7AC4D}", lpDIID_DWebBrowserEvents2);
+    - Если vIID не указан, подсоединиться ко всем возможным интерфейсам объекта.
+
+Возвращаемое значение
+  Число. Количество интерфейсов, к которым успешно удалось подключиться.
+
+Пример:
+  var oIE=new ActiveXObject("InternetExplorer.Application");
+  var oSys=AkelPad.SystemFunction();
+
+  if (AkelPad.ConnectObject(oIE, "IE_", "{34A715A0-6587-11D0-924A-0020AFC7AC4D}" /*DIID_DWebBrowserEvents2*/))
+  {
+    oIE.Visible=true;
+    oIE.Navigate("http://akelpad.sourceforge.net/");
+    AkelPad.WindowGetMessage();
+    AkelPad.DisconnectObject(oIE);
+  }
+  oIE.Quit();
+
+  function IE_DocumentComplete(pDisp, URL)
+  {
+    AkelPad.MessageBox(oIE.HWND, URL, WScript.ScriptName, 0 /*MB_OK*/);
+    oSys.Call("user32::PostQuitMessage", 0);
+  }
+
+
+AkelPad.DisconnectObject (+ActiveX)
+___________________________________
+
+Отсоединиться от событий объекта.
+
+  DisconnectObject(oEventSource);
+
+Аргументы
+  oEventSource
+    Объект, с которым произведено соединение.
+
+Возвращаемое значение
+  Ноль.
+
+Пример:
+  См. пример ConnectObject.
+
+
+AkelPad.ActiveXThis (+ActiveX)
+______________________________
+
+Передать корневой IDispatch плагину. Требуется некоторым методам для работы в режиме ActiveX (ConnectObject, ScriptHandle).
+
+  ActiveXThis(this);
+
+Аргументы
+  this
+    Корневой IDispatch скрипта.
+
+Возвращаемое значение
+  Ноль.
+
+Пример:
+  См. раздел ActiveX.
+
+
+WScript.ScriptBaseName
+______________________
+
+Получить базовое имя скрипта.
+
+  WScript.ScriptBaseName
+
+Возвращаемое значение
+  Строка. Базовое имя скрипта.
+
+Пример:
+  WScript.Echo(WScript.ScriptBaseName);
+
+
 _TCHAR (+ActiveX)
 _________________
 
@@ -2942,7 +3091,7 @@ __________________
   Число. Указатель.
 
 Пример:
-  See AkelPad.ThreadHook example.
+  См. пример ThreadHook.
 
 
 vbPtrAdd (+ActiveX)
@@ -2971,7 +3120,7 @@ __________________
   Число. Указатель.
 
 Пример:
-  See AkelPad.WindowRegisterClass example (VBScript).
+  См. пример WindowRegisterClass (VBScript).
 
 
 vbPtrMath (+ActiveX)
@@ -2987,12 +3136,16 @@ Scripts.dll может быть использован в сторонних приложениях после регистрации биб
 - Регистрация версии x64: "%SystemRoot%\System32\regsvr32.exe" Scripts.dll
 
 Пример использования:
-  var AkelPad=new ActiveXObject("AkelPad.Document");
-  var _TCHAR=AkelPad.Constants._TCHAR;
-  var _TSTR=AkelPad.Constants._TSTR;
-  var _TSIZE=AkelPad.Constants._TSIZE;
-  var _X64=AkelPad.Constants._X64;
-
+  if (typeof AkelPad == "undefined")
+  {
+    AkelPad=new ActiveXObject("AkelPad.Document");
+    AkelPad.ActiveXThis(this);
+    _TCHAR=AkelPad.Constants._TCHAR;
+    _TSTR=AkelPad.Constants._TSTR;
+    _TSIZE=AkelPad.Constants._TSIZE;
+    _X64=AkelPad.Constants._X64;
+    _PtrAdd=function(n1, n2) {return AkelPad.Global._PtrAdd(n1, n2);};
+  }
   var oSys=AkelPad.SystemFunction();
   var lpBuffer;
   var pWinDir="";
