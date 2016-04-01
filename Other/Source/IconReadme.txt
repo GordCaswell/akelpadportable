@@ -1,1 +1,1 @@
-The high-res AkelPad icon is from the Nuvola set copyright David Vignoni | ICON KING, released under the GPL (see license.txt).
+The high-resolution AkelPad icon is from the Nuvola icon set, copyright David Vignoni | ICON KING, released under the LGPL version 2.1 (see IconLicense.txt).
