@@ -1,8 +1,8 @@
 *****************************************************************
-***                 Coder AkelPad plugin v19.2                ***
+***                 Coder AkelPad plugin v19.5                ***
 *****************************************************************
 
-2015 Shengalts Aleksander aka Instructor (Shengalts@mail.ru)
+2016 Shengalts Aleksander aka Instructor (Shengalts@mail.ru)
 
 
 *** Description ***
@@ -437,7 +437,7 @@ Rule file
   - See html.coder for example.
 
 
-*** Several variables description, that used in *.coder files ***
+*** Several variables description, that used in Coder::Settings themes ***
 
 Automatic selection marking:
   HighLight_AutoMarkFlags
