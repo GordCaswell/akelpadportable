@@ -444,6 +444,7 @@
           <br><li>4 - Draw newline selection to right edge of text area.
           <br><li>8 - Hides the selection when the control loses the input focus.
           <br><li>16 - Disable marker painting after last line.
+          <br><li>128 - Unit of vertical scrolling is line (default is pixel).
           <br><li>256 - Show scroll bars only when needed.
           <br><li>512 - Draw thin edit window border.
           <br><li>1024 - Draw no edit window border.
@@ -1176,7 +1177,8 @@
 
     <tr>
       <td align=center><b>4103</b></td>
-      <td>Open file dialog</td>
+      <td>Open file dialog
+          <br>Optional parameter: 1 - force to use last directory.</td>
     </tr>
 
     <tr>
@@ -1191,7 +1193,8 @@
 
     <tr>
       <td align=center><b>4106</b></td>
-      <td>Save file dialog</td>
+      <td>Save file dialog
+          <br>Optional parameter: 1 - force to use last directory.</td>
     </tr>
 
     <tr>

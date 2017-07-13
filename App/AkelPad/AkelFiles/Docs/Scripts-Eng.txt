@@ -1,8 +1,8 @@
 *****************************************************************
-***                 Scripts AkelPad plugin v18.2              ***
+***                 Scripts AkelPad plugin v18.5              ***
 *****************************************************************
 
-2015 Shengalts Aleksander aka Instructor (Shengalts@mail.ru)
+2007-2016 Shengalts Aleksander aka Instructor (Shengalts@mail.ru)
 
 
 *** Description ***
@@ -893,16 +893,16 @@ Arguments
     0x01000000  //FRF_ALLFILES            Search in all opened MDI documents (usage: FRF_DOWN|FRF_ALLFILES or FRF_DOWN|FRF_BEGINNING|FRF_ALLFILES).
     0x08000000  //FRF_CYCLESEARCH         Cycle search.
     0x10000000  //FRF_CYCLESEARCHPROMPT   Prompt during cycle search.
+    0x80000000  //FRF_TEST                Test only. Without text selection.
 
 Return Value
   Number. Character position of the next match.
-  If there are no more matches, the return value is –1.
-  If there is syntax error in regular expression (with FRF_REGEXP flag), the return value is (–100 - PatternOffset).
-  For example, pFindIt equal to "ab[c", syntax error in third symbol, return value is –102.
+  If there are no more matches, the return value is -1.
+  If there is syntax error in regular expression (with FRF_REGEXP flag), the return value is (-100 - PatternOffset).
+  For example, pFindIt equal to "ab[c", syntax error in third symbol, return value is -102.
 
 Example:
-  var hWndEdit=AkelPad.GetEditWnd();
-  AkelPad.TextFind(hWndEdit, "MySearchString", 0x00200001 /*FRF_DOWN|FRF_BEGINNING*/);
+  AkelPad.TextFind(0, "MySearchString", 0x00200001 /*FRF_DOWN|FRF_BEGINNING*/);
 
 
 AkelPad.TextReplace
@@ -910,7 +910,7 @@ ___________________
 
 Find and replace text.
 
-  TextReplace(hHandle, pFindIt, pReplaceWith, nFlags, bAll);
+  TextReplace(hHandle, pFindIt, pReplaceWith, nFindFlags, nReplaceFlags);
 
 Arguments
   hHandle
@@ -919,7 +919,7 @@ Arguments
     Text to find.
   pReplaceWith
     Text to replace with.
-  nFlags
+  nFindFlags
     0x00000001  //FRF_DOWN                Find down.
     0x00000002  //FRF_WHOLEWORD           Find whole word.
     0x00000004  //FRF_MATCHCASE           Search is case-sensitive.
@@ -930,22 +930,21 @@ Arguments
     0x00400000  //FRF_SELECTION           Search in selection (usage: FRF_DOWN|FRF_SELECTION).
     0x00800000  //FRF_ESCAPESEQ           Search with escape sequences.
     0x01000000  //FRF_ALLFILES            Search in all opened MDI documents (usage: FRF_DOWN|FRF_ALLFILES or FRF_DOWN|FRF_BEGINNING|FRF_ALLFILES).
-    0x08000000  //FRF_CYCLESEARCH         Cycle search (works, if bAll == false).
+    0x08000000  //FRF_CYCLESEARCH         Cycle search (don't use with RRF_ALL).
     0x10000000  //FRF_CYCLESEARCHPROMPT   Prompt during cycle search.
-  bAll
-    true   replace all.
-    false  replace single.
+    0x80000000  //FRF_TEST                Test only. Without text replacement and selection.
+  nReplaceFlags
+    0x1         //RRF_ALL                 Replace all. Default is replace single.
 
 Return Value
   Number. Character position of the next match.
-  If there are no more matches, the return value is –1.
-  If bAll is true, the return value is count of changes.
-  If there is syntax error in regular expression (with FRF_REGEXP flag), the return value is (–100 - PatternOffset).
-  For example, pFindIt equal to "ab[c", syntax error in third symbol, return value is –102.
+  If there are no more matches, the return value is -1.
+  If RRF_ALL flag specified, the return value is count of changes.
+  If there is syntax error in regular expression (with FRF_REGEXP flag), the return value is (-100 - PatternOffset).
+  For example, pFindIt equal to "ab[c", syntax error in third symbol, return value is -102.
 
 Example:
-  var hWndEdit=AkelPad.GetEditWnd();
-  AkelPad.TextReplace(hWndEdit, "MySearchString", "MyReplaceText", 0x00200001 /*FRF_DOWN|FRF_BEGINNING*/, true);
+  AkelPad.TextReplace(0, "MySearchString", "MyReplaceText", 0x00200001 /*FRF_DOWN|FRF_BEGINNING*/, 0x1 /*RRF_ALL*/);
 
 
 AkelPad.GetClipboardText (+ActiveX)
@@ -2404,7 +2403,7 @@ Arguments
          //            which depend on dialog font sizes.
          //Default is 0x0.
   hMenu
-    Menu handle or, depending on style, child window handle. See description of CreateWindowEx in MSDN. If zero, not used (default).
+    Specifies the ordinal value of a menu resource in an executable file or string that specifies the name of a menu resource in an executable file. If zero, not used (default).
   hInstance
     Instance handle of the module to be associated with the window. If zero, AkelPad.GetInstanceDll handle will be used (default).
   pFaceName
@@ -2746,10 +2745,12 @@ Change synchronization object.
 
 Arguments
   nUnlockType
-    0x1  //ULT_UNLOCKSCRIPTSQUEUE   Allow other scripts running with this script at the same time (by default).
-    0x2  //ULT_UNLOCKPROGRAMTHREAD  Unlock main thread from waiting this script. Only if script is called with external call with code 2.
-    0x4  //ULT_LOCKMULTICOPY        Deny execution of the multiple script copies. By default execution is not denied.
-    0x8  //ULT_UNLOCKMULTICOPY      Allow execution of the multiple script copies.
+    0x01  //ULT_UNLOCKSCRIPTSQUEUE   Allow other scripts running with this script at the same time (by default).
+    0x02  //ULT_UNLOCKPROGRAMTHREAD  Unlock main thread from waiting this script. Only if script is called with external call with code 2.
+    0x04  //ULT_LOCKMULTICOPY        Deny execution of the multiple script copies. By default execution is not denied.
+    0x08  //ULT_UNLOCKMULTICOPY      Allow execution of the multiple script copies.
+    0x10  //ULT_LOCKSENDMESSAGE      AkelPad.SendMessage, AkelPad.Command called with script thread lock (by default).
+    0x20  //ULT_UNLOCKSENDMESSAGE    AkelPad.SendMessage, AkelPad.Command called without script thread lock (slower).
 
 Return Value
   Number. Changed synchronization objects, see nUnlockType.
@@ -2797,6 +2798,9 @@ Arguments
     3   //SH_FINDSCRIPT  Find script handle by its name.
         //  vData: script name.
         //  Return value: first found working script handle in stack.
+    10  //SH_GETEXECTYPE  Retrieve code of the external script call.
+        //  vData: script handle. If zero then current script handle is used.
+        //  Return value: code of the external script call.
     11  //SH_GETTHREADHANDLE  Retrieve script thread handle.
         //  vData: script handle. If zero then current script handle is used.
         //  Return value: script thread handle.
@@ -2818,6 +2822,9 @@ Arguments
     17  //SH_GETSERVICEWINDOW  Retrieve script service window handle. Automatically created when using WindowSubClass, ThreadHook and RegisterCallback methods.
         //  vData: script handle. If zero then current script handle is used.
         //  Return value: script service window handle.
+    18  //SH_GETLOCKSENDMESSAGE  AkelPad.SendMessage, AkelPad.Command locks script thread.
+        //  vData: script handle. If zero then current script handle is used.
+        //  Return value: true - on, false - off.
     20  //SH_GETBASENAME  Retrieve script name without extension.
         //  vData: script handle. If zero then current script handle is used.
         //  Return value: script name without extension
@@ -3099,7 +3106,7 @@ Same as _PtrAdd. Uses for VBScript.
 
 
 _PtrMath (+ActiveX)
-__________________
+___________________
 
 Do mathematical operation with pointers.
 
@@ -3122,7 +3129,7 @@ Example:
 
 
 vbPtrMath (+ActiveX)
-___________________
+____________________
 
 Same as _PtrMath. Uses for VBScript.
 
